@@ -6,9 +6,15 @@ RAMPAGE: (*fRAMework to comPAre dGa dEtectors*) is a framework aimed at training
 
 ## Features
 
+*TODO*
+
 ## Installation
 
+*TODO*
+
 ## Usage
+
+*TODO*
 
 ## License
 Licensed under the [GNU GPLv3](LICENSE) license.
