@@ -6,7 +6,7 @@
 
 import warnings
 
-from DataElement.DataElement import DataElement
+from RAMPAGE.DataElement import DataElement
 import random
 
 ################################################################################

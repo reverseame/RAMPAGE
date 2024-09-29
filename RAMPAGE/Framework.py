@@ -6,10 +6,10 @@
 
 import warnings
 
-from Classifier.Classifier import Classifier
-from DataElement.DataElement import DataElement
-from Result.Result import Result
-from DatasetManager.DatasetManager import DatasetManager
+from RAMPAGE.Classifier import Classifier
+from RAMPAGE.DataElement import DataElement
+from RAMPAGE.Result import Result
+from RAMPAGE.DatasetManager import DatasetManager
 
 ################################################################################
 #  CONSTANT STRINGS  ###########################################################

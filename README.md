@@ -6,7 +6,19 @@ RAMPAGE: (*fRAMework to comPAre dGa dEtectors*) is a framework aimed at training
 
 ## Installation
 
-TBD
+RAMPAGE runs on Python 3.11. To use RAMPAGE, it is necessary to create a pip package and install it. For now, it has been decided not to upload it to PyPI.
+
+To generate the package, execute the following command:
+
+```bash
+python3 setup.py sdist bdist_wheel
+```
+
+The package will be generated in the `dist/` directory. To install it, use pip to install the file with the `.whl` extension that has been created. E.g.:
+
+```
+pip3 install dist/RAMPAGE-1.0-py3-none-any.whl --break-system-packages
+```
 
 ## Usage
 
