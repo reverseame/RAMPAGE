@@ -100,7 +100,7 @@ In `DataElement`, you need to add as many attributes to the class as the number 
 `Result` class is special, as it is empty by default. Therefore, a new class that inherits from `Result` should be created, where the desired metrics for the statistics to be measured will be implemented. E.g.:
 
 
-```
+```python
 class ResultPersonal(Result):
 
     def __init__(self, accuracy, precision, recall):
