@@ -1,9 +1,3 @@
-#############################################
-##  Original Author: Tomás Pelayo Benedet  ##
-##  Email:   tomaspelayobenedet@gmail.com  ##
-##  Last Modified:           May 30, 2023  ##
-#############################################
-
 import warnings
 
 from RAMPAGE.DataElement import DataElement
