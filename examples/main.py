@@ -1,6 +1,5 @@
 from RAMPAGE.Framework import Framework
-
-from common.datasetManagerCommon import DatasetManagerCommon
+from RAMPAGE.DatasetManager import DatasetManager
 
 from classifiers.LSTM import LSTM_example
 from classifiers.CNN import CNN_example
@@ -13,8 +12,8 @@ PATH_NON_DGA = "TBD"
 # Create Framework
 framework = Framework()
 
-# Create DatasetManager1 implementation
-datasetManager = DatasetManagerCommon()
+# Create DatasetManager implementation
+datasetManager = DatasetManager()
 
 # Set percentajes to use in train, validation and test
 datasetManager.setPercentages(70,15,15)

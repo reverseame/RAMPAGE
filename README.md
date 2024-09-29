@@ -36,14 +36,14 @@ pip install -r requirements.txt
 
 #### `main.py`
 
-The `main.py` file contains the primary execution code. It should import RAMPAGE and create the dataset manager class, which must inherit from `RAMPAGE.DatasetManager`.
+The `main.py` file contains the primary execution code. It should import RAMPAGE and DatasetManager class.
 
 ```python
 from RAMPAGE.Framework import Framework
 from PersonaldatasetManager import PersonalDatasetManager
 ```
 
-Next, the RAMPAGE class and the dataset manager class are instantiated. The dataset manager is then defined within RAMPAGE, and the datasets to be used are added.
+Next, DatasetManager is then defined within RAMPAGE, and the datasets to be used are added.
 
 ```python
 # Create Framework
@@ -89,24 +89,47 @@ for i in range(len(results)):
     print(framework.getResultByIndex(i).toString())
 ```
 
-#### DatasetManager
+#### Datasets Definition
 
-TODO
+For managing datasets, two classes need to be considered: DataElement and DatasetManager. DataElement represents a single unit with all its features. In the base version, it only includes the domain and a boolean indicating whether the domain should be classified as malicious or not. If new fields or features need to be added, two new classes must be created, inheriting from DataElement and DatasetManager, respectively.
 
-#### DataElement
-
-TODO
+In DataElement, you need to add as many attributes to the class as the number of features you want to include. In DatasetManager, the parseDataElement function must be overridden so that it can read the new fields of the updated DataElement.
 
 #### Result
 
-TODO
+`Result` class is special, as it is empty by default. Therefore, a new class that inherits from `Result` should be created, where the desired metrics for the statistics to be measured will be implemented. E.g.:
+
+
+```
+class ResultPersonal(Result):
+
+    def __init__(self, accuracy, precision, recall):
+        self.accuracy = accuracy
+        self.precision = precision
+        self.recall = recall
+
+    def toString(self) -> str:
+        ret = " * Accuracy   -> " + str(self.accuracy) + "\n"
+        ret = ret + " * Precision  -> " + str(self.precision) + "\n"
+        ret = ret + " * Recall     -> " + str(self.recall)
+        return ret
+    
+    def toCSVheader(self, separator:str) -> str:
+        ret = "accuracy" + separator + "precision" + separator + "recall"
+        return ret
+
+    def toCSV(self, separator:str) -> str:
+        ret = str(self.accuracy) + separator + str(self.precision)
+        ret = ret + separator + str(self.recall)
+        return ret
+```
 
 #### Classifier
 
 The classifiers inherit from the `RAMPAGE.Classifier` class. To do so, they must implement the train and test functions. A proposed implementation could be as follows:
 
 ```python
-class Baseline_example(Classifier):
+class Example(Classifier):
 
     #Define your configuration values
     ...

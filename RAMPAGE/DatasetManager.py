@@ -185,4 +185,11 @@ class DatasetManager:
 
     def parseDataElement(self, line:str) -> DataElement:
         '''readDataElement function'''
-        pass
+        domain = line.split(";")[0]
+        isDGAstr = line.split(";")[1]
+
+        isDGA = False
+        if (eval(isDGAstr)):
+            isDGA = True
+
+        return DataElement(domain, isDGA)
