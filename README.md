@@ -36,14 +36,14 @@ pip install -r requirements.txt
 
 #### `main.py`
 
-The `main.py` file contains the primary execution code. It should import RAMPAGE and DatasetManager class.
+The `main.py` file contains the primary execution code. It should import RAMPAGE `Framework` and `DatasetManager` class.
 
 ```python
 from RAMPAGE.Framework import Framework
 from PersonaldatasetManager import PersonalDatasetManager
 ```
 
-Next, DatasetManager is then defined within RAMPAGE, and the datasets to be used are added.
+Next, `DatasetManager` is then defined within RAMPAGE `Framework`, and the datasets to be used are added.
 
 ```python
 # Create Framework
@@ -91,9 +91,9 @@ for i in range(len(results)):
 
 #### Datasets Definition
 
-For managing datasets, two classes need to be considered: DataElement and DatasetManager. DataElement represents a single unit with all its features. In the base version, it only includes the domain and a boolean indicating whether the domain should be classified as malicious or not. If new fields or features need to be added, two new classes must be created, inheriting from DataElement and DatasetManager, respectively.
+For managing datasets, two classes need to be considered: `DataElement` and `DatasetManager`. `DataElement` represents a single unit with all its features. In the base version, it only includes the domain and a boolean indicating whether the domain should be classified as malicious or not. If new fields or features need to be added, two new classes must be created, inheriting from `DataElement` and `DatasetManager`, respectively.
 
-In DataElement, you need to add as many attributes to the class as the number of features you want to include. In DatasetManager, the parseDataElement function must be overridden so that it can read the new fields of the updated DataElement.
+In `DataElement`, you need to add as many attributes to the class as the number of features you want to include. In `DatasetManager`, the `parseDataElement` function must be overridden so that it can read the new fields of the updated `DataElement`.
 
 #### Result
 
@@ -126,7 +126,7 @@ class ResultPersonal(Result):
 
 #### Classifier
 
-The classifiers inherit from the `RAMPAGE.Classifier` class. To do so, they must implement the train and test functions. A proposed implementation could be as follows:
+The classifiers inherit from the RAMPAGE `Classifier` class. To do so, they must implement the train and test functions. A proposed implementation could be as follows:
 
 ```python
 class Example(Classifier):
