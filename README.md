@@ -4,6 +4,14 @@
 
 RAMPAGE: (*fRAMework to comPAre aGd dEtectors*) is a framework aimed at training and comparing machine learning models for the detection of Algorithmically Generated Domains (AGDs).
 
+## Features
+
+* Training and testing of machine learning models for detecting AGDs
+* A structured, clean and straightforward approach to comparing machine learning models
+* Possibility of extending the base data types to add new features to dataset elements
+* Automated management of datasets
+* Simple way to share models and results
+
 ## Installation
 
 RAMPAGE runs on Python 3.11. To use RAMPAGE, it is necessary to create a pip package and install it. For now, it has been decided not to upload it to PyPI.
