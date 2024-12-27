@@ -1,338 +1,358 @@
 import warnings
-
 from RAMPAGE.Classifier import Classifier
-from RAMPAGE.DataElement import DataElement
 from RAMPAGE.Result import Result
 from RAMPAGE.DatasetManager import DatasetManager
 
-################################################################################
-#  CONSTANT STRINGS  ###########################################################
-################################################################################
 
-WRONG_INDEX_CLASSIFIERS = '''\n  ERROR:
+# Error and warning message templates
+WRONG_INDEX_CLASSIFIERS = """
+ERROR:
 
-  Index out of bounds...
+Index out of bounds...
 
-  Number of classifiers: {total}
-  Posible index values: 0 - {posibleIndex}
-  Index: {currentIndex}
-'''
+Number of classifiers: {total}
+Possible index values: 0 - {max_index}
+Index: {current_index}
+"""
 
-WRONG_INDEX_RESULTS = '''\n  ERROR:
+WRONG_INDEX_RESULTS = """
+ERROR:
 
-  Index out of bounds...
+Index out of bounds...
 
-  Number of results: {total}
-  Posible index values: 0 - {posibleIndex}
-  Index: {currentIndex}
-'''
+Number of results: {total}
+Possible index values: 0 - {max_index}
+Index: {current_index}
+"""
 
-WARNING_INDEX_CLASSIFIER_EXIST = '''\n  WARNING:
+WARNING_CLASSIFIER_NOT_FOUND = """
+WARNING:
 
-  Does not exist the classifier
-'''
+Classifier does not exist
+"""
 
-ERROR_NO_DEBUG = '''\n  ERROR:
+ERROR_NO_DEBUG = """
+ERROR:
 
-  Debug mode is NOT activated
+Debug mode is NOT activated
 
-  Not allowed to execute {nameFunction} without debug mode
-'''
-
-################################################################################
-#  CODE  #######################################################################
-################################################################################
+Not allowed to execute {function_name} without debug mode
+"""
 
 class Framework:
+    """
+    A framework for managing machine learning classifiers and datasets.
+    
+    Attributes:
+        debug (bool): Debug mode flag.
+        dataset_manager (DatasetManager): Manager for handling datasets.
+        classifiers (list[Classifier]): List of classifiers.
+        results (list[Result]): List of results.
+    """
 
-    debug = False
-    datasetManager:DatasetManager = None
-    classifiers = []
-    results = []
+    def __init__(self, debug_mode: bool = False) -> None:
+        """
+        Initialize the framework.
 
-    def __init__(self, debugMode:bool = False):
-        self.debug = debugMode
-        self.datasetManager = None
-        self.classifiers.clear()
-        self.results.clear()
+        Args:
+            debug_mode (bool, optional): Whether to enable debug mode. Defaults to False.
+        """
+        self.debug = debug_mode
+        self.dataset_manager = None
+        self.classifiers = []
+        self.results = []
+
         if self.debug:
             print("\n#############################################")
             print("########### DEBUG MODE ACTIVATED ############")
             print("#############################################\n")
 
-    def defineDatasetManager(self, datasetManager:DatasetManager):
+    def set_dataset_manager(self, dataset_manager: DatasetManager) -> None:
         """
-        Define the instance of a DatasetManager that will be used in
-        the framework as dataset manager
+        Set the dataset manager instance.
+
+        Args:
+            dataset_manager (DatasetManager): The dataset manager to use.
+        """
+        self.dataset_manager = dataset_manager
+
+    def add_dataset(self, path: str, random_sets: bool) -> None:
+        """
+        Add and split dataset from file.
+
+        Args:
+            path (str): Path to dataset file.
+            random_sets (bool): Whether to randomize the splits.
+        """
+        self.dataset_manager.add(path, random_sets)
         
-        :param datasetManager: DatasetManager that will be used
-        """
-        self.datasetManager = datasetManager
-
-    def addDataset(self, path:str, randomSets:bool):
-        """
-        Add DataElements splitted in train, validation and test sets
-        from the specified file and put it into DatasetManager
-
-        :param path: Path from DataElements are being read
-        :param randomSets: Determinates if sets will be randomized
-        """
-        self.datasetManager.add(path, randomSets)
         if self.debug:
             print("#############################################")
             print("###### NEW DataElements added to sets #######")
             print("#############################################\n")
-            print("  new size of TRAIN set     : ", len(self.datasetManager.getTrain()))
-            print("  new size of VALIDATION set: ", len(self.datasetManager.getValidation()))
-            print("  new size of TEST set      : ", len(self.datasetManager.getTest()), "\n")
+            print(f"  new size of TRAIN set     : {len(self.dataset_manager.get_train())}")
+            print(f"  new size of VALIDATION set: {len(self.dataset_manager.get_validation())}")
+            print(f"  new size of TEST set      : {len(self.dataset_manager.get_test())}\n")
 
-    def addTrainDataset(self, path:str):
+    def add_train_dataset(self, path: str) -> None:
         """
-        Adds DataElements to train set
-        from the specified file
+        Add data to training set.
 
-        :param path: Path from DataElements are being read
+        Args:
+            path (str): Path to training dataset file.
         """
-        self.datasetManager.addTrain(path)
+        self.dataset_manager.add_train(path)
 
-    def addValidationDataset(self, path:str):
+    def add_validation_dataset(self, path: str) -> None:
         """
-        Adds DataElements to validation set
-        from the specified file
+        Add data to validation set.
 
-        :param path: Path from DataElements are being read
+        Args:
+            path (str): Path to validation dataset file.
         """
-        self.datasetManager.addValidation(path)
+        self.dataset_manager.add_validation(path)
 
-    def addTestDataset(self, path:str):
+    def add_test_dataset(self, path: str) -> None:
         """
-        Adds DataElements to test set
-        from the specified file
+        Add data to test set.
 
-        :param path: Path from DataElements are being read
+        Args:
+            path (str): Path to test dataset file.
         """
-        self.datasetManager.addTest(path)
+        self.dataset_manager.add_test(path)
 
-    def addClassifier(self, classifier:Classifier):
+    def add_classifier(self, classifier: Classifier) -> None:
         """
-        Adds a classifier to the framework list to run
+        Add a classifier to the framework.
 
-        :param classifier: Classifier to add
+        Args:
+            classifier (Classifier): The classifier to add.
         """
-        # Adds the classifier to the list of classifiers
         self.classifiers.append(classifier)
-        # Adds None to results in the same index
-        # of the previous added classifier
         self.results.append(None)
 
-    def getClassifierByIndex(self, index:int) -> Classifier:
+    def get_classifier_by_index(self, index: int) -> Classifier:
         """
-        Returns the classifier by the specified index
-        
-        :param index: Index of the classifier to return
-        :return: The classifier of the specified index
+        Get classifier at specified index.
+
+        Args:
+            index (int): Index of the classifier to retrieve.
+
+        Returns:
+            Classifier: The classifier at the specified index.
+
+        Raises:
+            IndexError: If index is out of bounds.
         """
-        if index >= len(self.classifiers) or index < 0:
-            raise Exception(WRONG_INDEX_CLASSIFIERS.format(
-                total = len(self.classifiers),
-                posibleIndex = len(self.classifiers)-1,
-                currentIndex = index
-            ))
+        self._validate_classifier_index(index)
         return self.classifiers[index]
 
-    def clearClassifiers(self):
-        """
-        Clear all classifiers (also results)
-        """
+    def clear_classifiers(self) -> None:
+        """Clear all classifiers and results."""
         self.classifiers.clear()
         self.results.clear()
 
-    def run(self):
-        """
-        Train and test all classifiers
-        """
-        i = 0
-        while i < len(self.classifiers):
-            self.trainByIndex(i)
-            self.testByIndex(i)
-            i = i+1
+    def run(self) -> None:
+        """Train and test all classifiers."""
+        for i in range(len(self.classifiers)):
+            self.run_by_index(i)
 
+    def run_classifier(self, classifier: Classifier) -> None:
+        """
+        Train and test a specific classifier.
 
-    def runC(self, classifier:Classifier):
+        Args:
+            classifier (Classifier): The classifier to run.
         """
-        Train and test the classifier, must be in the classifier list
-        
-        :param classifier: Classifier to train and test
-        """
-        index = -1
-        try:
-            index = self.classifiers.index(classifier)
-        except ValueError:
-            warnings.warn(WARNING_INDEX_CLASSIFIER_EXIST)
-            return None
-        self.runByIndex(index)
+        index = self._get_classifier_index(classifier)
+        if index is not None:
+            self.run_by_index(index)
 
-    def runByIndex(self, index:int):
+    def run_by_index(self, index: int) -> None:
         """
-        Train and test the classifier specified by index
-        
-        :param index: Index of the classifier to train and test
-        """
-        if index >= len(self.classifiers) or index < 0:
-            raise Exception(WRONG_INDEX_CLASSIFIERS.format(
-                total = len(self.classifiers),
-                posibleIndex = len(self.classifiers)-1,
-                currentIndex = index
-            ))
-        self.trainByIndex(index)
-        self.testByIndex(index)
+        Train and test classifier at specified index.
 
-    def train(self):
-        """
-        Train all classifiers
-        """
-        i = 0
-        while i < len(self.classifiers):
-            self.trainByIndex(i)
-            i = i+1
+        Args:
+            index (int): Index of the classifier to run.
 
-    def trainC(self, classifier:Classifier):
+        Raises:
+            IndexError: If index is out of bounds.
         """
-        Train the classifier, must be in the classifier list
-        
-        :param classifier: Classifier to train
-        """
-        index = -1
-        try:
-            index = self.classifiers.index(classifier)
-        except ValueError:
-            warnings.warn(WARNING_INDEX_CLASSIFIER_EXIST)
-            return None
-        self.trainByIndex(index)
+        self._validate_classifier_index(index)
+        self.train_by_index(index)
+        self.test_by_index(index)
 
-    def trainByIndex(self, index:int):
-        """
-        Train the classifier specified by index
-        
-        :param index: Index of the classifier to train
-        """
-        if index >= len(self.classifiers) or index < 0:
-            raise Exception(WRONG_INDEX_CLASSIFIERS.format(
-                total = len(self.classifiers),
-                posibleIndex = len(self.classifiers)-1,
-                currentIndex = index
-            ))
-        self.classifiers[index].train(self.datasetManager.getTrain(),
-                                      self.datasetManager.getValidation())
+    def train(self) -> None:
+        """Train all classifiers."""
+        for i in range(len(self.classifiers)):
+            self.train_by_index(i)
 
-    def test(self):
+    def train_classifier(self, classifier: Classifier) -> None:
         """
-        Tests all classifiers
-        """
-        i = 0
-        while i < len(self.classifiers):
-            self.testByIndex(i)
-            i = i+1
+        Train a specific classifier.
 
-    def testC(self, classifier:Classifier):
+        Args:
+            classifier (Classifier): The classifier to train.
         """
-        Tests the classifier, must be in the classifier list
-        
-        :param classifier: Classifier to test
-        """
-        index = -1
-        try:
-            index = self.classifiers.index(classifier)
-        except ValueError:
-            warnings.warn(WARNING_INDEX_CLASSIFIER_EXIST)
-            return None
-        self.testByIndex(index)
+        index = self._get_classifier_index(classifier)
+        if index is not None:
+            self.train_by_index(index)
 
-    def testByIndex(self, index:int):
+    def train_by_index(self, index: int) -> None:
         """
-        Tests the classifier specified by index
-        
-        :param index: Index of the classifier to test
-        """
-        if index >= len(self.classifiers) or index < 0:
-            raise Exception(WRONG_INDEX_CLASSIFIERS.format(
-                total = len(self.classifiers),
-                posibleIndex = len(self.classifiers)-1,
-                currentIndex = index
-            ))
-        self.results[index] = self.classifiers[index].test(self.datasetManager.getTest())
+        Train classifier at specified index.
 
-    def getResults(self) -> list:
+        Args:
+            index (int): Index of the classifier to train.
+
+        Raises:
+            IndexError: If index is out of bounds.
         """
-        Return a list with all results
-        
-        :return: Return a list with all results (if the classifier
-                is not tested, return None in that cases)
+        self._validate_classifier_index(index)
+        self.classifiers[index].train(
+            self.dataset_manager.get_train(),
+            self.dataset_manager.get_validation()
+        )
+
+    def test(self) -> None:
+        """Test all classifiers."""
+        for i in range(len(self.classifiers)):
+            self.test_by_index(i)
+
+    def test_classifier(self, classifier: Classifier) -> None:
+        """
+        Test a specific classifier.
+
+        Args:
+            classifier (Classifier): The classifier to test.
+        """
+        index = self._get_classifier_index(classifier)
+        if index is not None:
+            self.test_by_index(index)
+
+    def test_by_index(self, index: int) -> None:
+        """
+        Test classifier at specified index.
+
+        Args:
+            index (int): Index of the classifier to test.
+
+        Raises:
+            IndexError: If index is out of bounds.
+        """
+        self._validate_classifier_index(index)
+        self.results[index] = self.classifiers[index].test(
+            self.dataset_manager.get_test()
+        )
+
+    def get_results(self) -> list[Result]:
+        """
+        Get all results.
+
+        Returns:
+            list[Result]: List of all classifier results.
         """
         return self.results
 
-    def getResultC(self, classifier:Classifier) -> Result:
+    def get_result_for_classifier(self, classifier: Classifier) -> Result:
         """
-        Returns the result by the specified classifier
-        
-        :param index: Index of the result to return
-        :return: Result of the classifier, if is not already
-                tested or classifier not exists, will return None
-        """
-        index = -1
-        try:
-            index = self.classifiers.index(classifier)
-        except ValueError:
-            warnings.warn(WARNING_INDEX_CLASSIFIER_EXIST)
-            return None
-        return self.getResultByIndex(index)
+        Get result for a specific classifier.
 
-    def getResultByIndex(self, index:int) -> Result:
+        Args:
+            classifier (Classifier): The classifier to get results for.
+
+        Returns:
+            Result: The result for the classifier, or None if not found.
         """
-        Returns the result by the specified index
-        
-        :param index: Index of the result to return
-        :return: Result of the index, if is not already
-                tested, will return None
+        index = self._get_classifier_index(classifier)
+        return self.get_result_by_index(index) if index is not None else None
+
+    def get_result_by_index(self, index: int) -> Result:
         """
-        if index >= len(self.results) or index < 0:
-            raise Exception(WRONG_INDEX_RESULTS.format(
-                total = len(self.results),
-                posibleIndex = len(self.results)-1,
-                currentIndex = index
-            ))
+        Get result at specified index.
+
+        Args:
+            index (int): Index of the result to retrieve.
+
+        Returns:
+            Result: The result at the specified index.
+
+        Raises:
+            IndexError: If index is out of bounds.
+        """
+        self._validate_result_index(index)
         return self.results[index]
 
-################################################################################
-#  DEBUG MODE FUNCTIONS  #######################################################
-################################################################################
-    def printAllDataset(self):
-        
-        # Check if is executing this method in debug mode
+    def print_all_dataset(self) -> None:
+        """
+        Print all datasets (debug mode only).
+
+        Raises:
+            SystemExit: If not in debug mode.
+        """
         if not self.debug:
-            print(ERROR_NO_DEBUG.format(nameFunction = "printAllDataset()"))
+            print(ERROR_NO_DEBUG.format(function_name="print_all_dataset()"))
             exit(1)
 
-        print("#############################################")
-        print("############## TRAIN SET LIST ###############")
-        print("#############################################\n")
+        for dataset_name, dataset in [
+            ("TRAIN", self.dataset_manager.get_train()),
+            ("VALIDATION", self.dataset_manager.get_validation()),
+            ("TEST", self.dataset_manager.get_test())
+        ]:
+            print("#############################################")
+            print(f"############## {dataset_name} SET LIST ###############")
+            print("#############################################\n")
+            
+            for element in dataset:
+                print(f"  - {element.domain} -> {element.is_dga}")
+            print()
 
-        for dataelement in self.datasetManager.getTrain():
-            print("  - ", dataelement.domain, " -> ", dataelement.isDGA)
-        print()
+    def _validate_classifier_index(self, index: int) -> None:
+        """
+        Validate classifier index.
 
-        print("#############################################")
-        print("########### VALIDATION SET LIST #############")
-        print("#############################################\n")
+        Args:
+            index (int): Index to validate.
 
-        for dataelement in self.datasetManager.getValidation():
-            print("  - ", dataelement.domain, " -> ", dataelement.isDGA)
-        print()
+        Raises:
+            IndexError: If index is out of bounds.
+        """
+        if not 0 <= index < len(self.classifiers):
+            raise IndexError(WRONG_INDEX_CLASSIFIERS.format(
+                total=len(self.classifiers),
+                max_index=len(self.classifiers) - 1,
+                current_index=index
+            ))
 
-        print("#############################################")
-        print("############### TEST SET LIST ###############")
-        print("#############################################\n")
+    def _validate_result_index(self, index: int) -> None:
+        """
+        Validate result index.
 
-        for dataelement in self.datasetManager.getTest():
-            print("  - ", dataelement.domain, " -> ", dataelement.isDGA)
-        print()
+        Args:
+            index (int): Index to validate.
+
+        Raises:
+            IndexError: If index is out of bounds.
+        """
+        if not 0 <= index < len(self.results):
+            raise IndexError(WRONG_INDEX_RESULTS.format(
+                total=len(self.results),
+                max_index=len(self.results) - 1,
+                current_index=index
+            ))
+
+    def _get_classifier_index(self, classifier: Classifier) -> int:
+        """
+        Get index of classifier or None if not found.
+
+        Args:
+            classifier (Classifier): The classifier to find.
+
+        Returns:
+            int: Index of the classifier, or None if not found.
+        """
+        try:
+            return self.classifiers.index(classifier)
+        except ValueError:
+            warnings.warn(WARNING_CLASSIFIER_NOT_FOUND)
+            return None

@@ -1,114 +1,156 @@
+from typing import Set
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential, load_model
+from tensorflow.keras.layers import (
+   Dense,
+   Embedding, 
+   Dropout,
+   Activation,
+   Flatten
+)
+from keras.utils import pad_sequences
+from keras.callbacks import ModelCheckpoint
+
 from RAMPAGE.Classifier import Classifier
 from RAMPAGE.Result import Result
 from RAMPAGE.DataElement import DataElement
-
 from common.resultCommon import ResultCommon
 from common.commonData import CommonData
 
-from tensorflow.keras.models import Sequential, load_model
-from tensorflow.keras.layers import Dense, Input, LSTM, Embedding, Dropout, Activation, Bidirectional, Conv1D, MaxPooling1D, Flatten
-from tensorflow.keras import Model
-import tensorflow as tf
-from keras.utils import pad_sequences
-from keras.callbacks import EarlyStopping, ModelCheckpoint
 
-import numpy
+class BaselineExample(Classifier):
+   """
+   Baseline neural network classifier for domain name classification.
+   
+   A simple baseline model using embedding and dense layers to classify
+   domains as DGA or legitimate.
+   
+   Attributes:
+       model_name (str): Name identifier for the model.
+       max_length (int): Maximum length of input sequences.
+       save_file (str): Path to save the trained model.
+   """
 
-class Baseline_example(Classifier):
+   def __init__(self) -> None:
+       """Initialize the baseline classifier with a simple architecture."""
+       self.model_name = "Baseline_example"
+       self.commonData = CommonData()
+       self.max_length = self.commonData.max_length
+       self.save_file = f"./classifiers/models/{self.model_name}.keras"
+       
+       self._build_model()
 
-    model = None
-    epochs = CommonData.epochs
-    batch_size = CommonData.batch_size
-    model_name = "Baseline_example"
-    maxlen = CommonData.maxlen
+   def _build_model(self) -> None:
+       """Build and compile the baseline model architecture."""
+       self.model = Sequential(name=self.model_name)
+       
+       # Simple embedding layer
+       self.model.add(Embedding(
+           input_dim=128,
+           output_dim=128,
+           input_length=self.max_length
+       ))
+       
+       # Flatten for dense layer
+       self.model.add(Flatten())
+       
+       # Output layer
+       self.model.add(Dense(
+           units=1,
+           activation='sigmoid'
+       ))
+       
+       # Model compilation with default Adam optimizer
+       self.model.compile(
+           loss='binary_crossentropy',
+           optimizer='adam',
+           metrics=self.commonData.metrics
+       )
 
-    save_file = "./classifiers/models/"+model_name+".keras"
+   def _prepare_data(self, data: Set[DataElement]) -> tuple[np.ndarray, np.ndarray]:
+       """
+       Convert domain data to numerical sequences.
+       
+       Args:
+           data: Set of DataElement objects.
+           
+       Returns:
+           tuple: (features, labels) as numpy arrays.
+       """
+       x_data = []
+       y_data = []
+       
+       for element in data:
+           # Convert domain characters to numerical values
+           data_vec = [ord(char) - 33 for char in element.domain]  # 33 is '!'
+           x_data.append(data_vec)
+           y_data.append(1 if element.is_dga else 0)
+       
+       # Pad sequences and convert to numpy arrays
+       x_data = pad_sequences(x_data, padding='post', maxlen=self.max_length)
+       return np.array(x_data, dtype=float), np.array(y_data, dtype=float)
 
-    def __init__(self) -> None:
+   def train(self, train_set: Set[DataElement], validation_set: Set[DataElement]) -> None:
+       """
+       Train the baseline model.
+       
+       Args:
+           train_set: Training dataset.
+           validation_set: Validation dataset.
+       """
+       # Prepare training and validation data
+       x_train, y_train = self._prepare_data(train_set)
+       x_val, y_val = self._prepare_data(validation_set)
+       
+       # Define model checkpoint for saving best model
+       checkpoint = ModelCheckpoint(
+           self.save_file,
+           monitor='val_accuracy',
+           verbose=self.commonData.verbose,
+           save_best_only=True,
+           save_weights_only=False,
+           mode='auto'
+       )
+       
+       # Train the model
+       self.model.fit(
+           x_train,
+           y_train,
+           epochs=self.commonData.epochs,
+           verbose=self.commonData.verbose,
+           validation_data=(x_val, y_val),
+           batch_size=self.commonData.batch_size,
+           callbacks=[checkpoint]
+       )
 
-        self.model = Sequential (name=self.model_name)
-        self.model.add(Embedding(input_dim=128, output_dim=128,input_length=CommonData.maxlen))
-        self.model.add(Flatten())
-        self.model.add(Dense(1, activation='sigmoid'))
-
-        
-        self.model.compile(loss ='binary_crossentropy',
-        optimizer='adam', metrics=CommonData.metrics)
-        
-        #self.model.summary()
-        
-    def train(self, train:set, validation:set):
-
-        x = []
-        y = []
-
-        for dataelement in train:
-            dataVec = []
-            for character in dataelement.domain:
-                dataVec.append(ord(character) - 33) # 33 is the first printeable char (is !)
-            x.append(dataVec)
-            if dataelement.isDGA:
-                y.append(1)
-            else:
-                y.append(0)
-
-        x_val = []
-        y_val = []
-
-        for dataelement in validation:
-            dataVec = []
-            for character in dataelement.domain:
-                    dataVec.append(ord(character) - 33) # 33 is the first printeable char (is !)
-            x_val.append(dataVec)
-            if dataelement.isDGA:
-                y_val.append(1)
-            else:
-                y_val.append(0)
-
-        x = pad_sequences(x, padding='post', maxlen=self.maxlen)
-
-        x = numpy.array(x, dtype=float)
-        y = numpy.array(y, dtype=float)
-
-        x_val = pad_sequences(x_val, padding='post', maxlen=self.maxlen)
-
-        x_val = numpy.array(x_val, dtype=float)
-        y_val = numpy.array(y_val, dtype=float)
-
-        checkpoint=ModelCheckpoint(self.save_file, monitor='val_accuracy',
-                                   verbose=CommonData.verbose, save_best_only=True,
-                                   save_weights_only=False, mode='auto')
-        
-        history = self.model.fit(x, y, epochs=self.epochs,
-                                 verbose = CommonData.verbose,
-                                 validation_data=(x_val, y_val),
-                                 batch_size=self.batch_size,
-                                 callbacks=[checkpoint])
-
-
-    def test(self, test:set) -> Result:
-        
-        best_model = load_model(self.save_file)
-
-        x_test = []
-        y_test = []
-
-        for dataelement in test:
-            dataVec = []
-            for character in dataelement.domain:
-                    dataVec.append(ord(character) - 33) # 33 is the first printeable char (is !)
-            x_test.append(dataVec)
-            if dataelement.isDGA:
-                y_test.append(1)
-            else:
-                y_test.append(0)
-
-        x_test = pad_sequences(x_test, padding='post', maxlen=self.maxlen)
-
-        x_test = numpy.array(x_test, dtype=float)
-        y_test = numpy.array(y_test, dtype=float)
-        
-        scores = best_model.evaluate(x_test, y_test, batch_size=10)
-        #print("\n%s: %.2f%%" % (self.model.metrics_names[1], scores[1]*100))
-
-        return ResultCommon(scores[1]*100, scores[2]*100, scores[3]*100, scores[4], scores[5], scores[6], scores[7], scores[8])
+   def test(self, test_set: Set[DataElement]) -> Result:
+       """
+       Test the trained model.
+       
+       Args:
+           test_set: Test dataset.
+           
+       Returns:
+           ResultCommon: Object containing evaluation metrics.
+       """
+       # Load the best model
+       best_model = load_model(self.save_file)
+       
+       # Prepare test data
+       x_test, y_test = self._prepare_data(test_set)
+       
+       # Evaluate model
+       scores = best_model.evaluate(x_test, y_test, batch_size=10)
+       
+       # Return metrics
+       return ResultCommon(
+           accuracy=scores[1] * 100,
+           precision=scores[2] * 100,
+           recall=scores[3] * 100,
+           fp=scores[4],
+           fn=scores[5],
+           tp=scores[6],
+           tn=scores[7],
+           auc=scores[8]
+       )

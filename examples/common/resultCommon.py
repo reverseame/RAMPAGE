@@ -1,76 +1,204 @@
 from RAMPAGE.Result import Result
-
 import math
-import statistics
+from typing import Union
+
 
 class ResultCommon(Result):
+    """
+    A class to store and calculate common classification metrics.
+    
+    This class extends the base Result class and provides implementation
+    for various classification metrics including accuracy, precision,
+    recall, F1-score, TPR, FPR, AUC, MCC, and Kappa coefficient.
+    """
 
-    def __init__(self, accuracy, precision, recall, fp, fn, tp, tn, auc) -> None:
+    def __init__(
+        self,
+        accuracy: float,
+        precision: float,
+        recall: float,
+        fp: int,
+        fn: int,
+        tp: int,
+        tn: int,
+        auc: float
+    ) -> None:
+        """
+        Initialize ResultCommon with classification metrics.
+
+        Args:
+            accuracy (float): Classification accuracy.
+            precision (float): Classification precision.
+            recall (float): Classification recall.
+            fp (int): Number of false positives.
+            fn (int): Number of false negatives.
+            tp (int): Number of true positives.
+            tn (int): Number of true negatives.
+            auc (float): Area Under the Curve value.
+        """
         self.accuracy = accuracy
         self.precision = precision
         self.recall = recall
-        if precision + recall != 0:
-            self.f1_score = 2 * (precision * recall) / (precision + recall)
-        else:
-            self.f1_score = 0
         
-        if fp + tn != 0:
-            self.fpr = fp / (fp+tn)
-        else:
-            self.fpr = 0
-
-        if tp + fn != 0:
-            self.tpr = tp/(tp+fn)
-        else:
-            self.tpr = 0
+        # Calculate F1 score
+        self.f1_score = self._calculate_f1_score(precision, recall)
+        
+        # Calculate False Positive Rate and True Positive Rate
+        self.fpr = self._calculate_fpr(fp, tn)
+        self.tpr = self._calculate_tpr(tp, fn)
+        
+        # Store basic metrics
         self.fp = fp
         self.fn = fn
         self.tp = tp
         self.tn = tn
         self.auc = auc
-        if math.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)) != 0:
-            self.mcc = ((tp * tn) - (fp * fn)) / math.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
-        else:
-            self.mcc = 0
         
-        # Kappa implemented by
-        # https://stackoverflow.com/questions/58735642/how-to-correctly-implement-cohen-kappa-metric-in-keras
+        # Calculate Matthews Correlation Coefficient
+        self.mcc = self._calculate_mcc(tp, tn, fp, fn)
+        
+        # Calculate Kappa coefficient
+        self.kappa = self._calculate_kappa(tp, tn, fp, fn)
 
-        if (tn+fp+fn+tp) != 0:
-            p0 = (tn+tp)/(tn+fp+fn+tp)
-            pa = ((tn+tp)/(tn+fp+fn+tp))*((tn+fn)/(tn+fp+fn+tp))
-            pb = ((fn+tp)/(tn+fp+fn+tp))*((fp+tp)/(tn+fp+fn+tp))
-            pe = pa + pb
-            self.kappa = (p0-pe)/(1-pe)
-        else:
-            self.kappa = 0
+    def _calculate_f1_score(self, precision: float, recall: float) -> float:
+        """
+        Calculate F1 score from precision and recall.
 
-    def toString(self) -> str:
-        ret = " * Accuracy   -> " + str(self.accuracy) + "\n"
-        ret = ret + " * Precision  -> " + str(self.precision) + "\n"
-        ret = ret + " * Recall     -> " + str(self.recall) + "\n"
-        ret = ret + " * F1 score   -> " + str(self.f1_score) + "\n"
-        ret = ret + " * FPR        -> " + str(self.fpr) + "\n"
-        ret = ret + " * TPR        -> " + str(self.tpr) + "\n"
-        ret = ret + " * AUC        -> " + str(self.auc) + "\n"
-        ret = ret + " * MCC        -> " + str(self.mcc) + "\n"
-        ret = ret + " * Kappa      -> " + str(self.kappa)
-        return ret
-    
-    def toCSVheader(self, separator:str) -> str:
-        ret = "accuracy" + separator + "precision" + separator + "recall"
-        ret = ret + separator + "f1" + separator + "fpr" + separator + "tpr"
-        ret = ret + separator + "auc" + separator + "fp"  + separator + "fn"
-        ret = ret + separator + "tp" + separator + "tn" + separator + "mcc"
-        ret = ret + separator + "kappa"
-        return ret
+        Args:
+            precision (float): Classification precision.
+            recall (float): Classification recall.
 
-    def toCSV(self, separator:str) -> str:
-        ret = str(self.accuracy) + separator + str(self.precision)
-        ret = ret + separator + str(self.recall) + separator
-        ret = ret + str(self.f1_score) + separator + str(self.fpr) + separator
-        ret = ret + str(self.tpr) + separator + str(self.auc) + separator
-        ret = ret + str(self.fp) + separator + str(self.fn) + separator
-        ret = ret + str(self.tp) + separator + str(self.tn) + separator
-        ret = ret + str(self.mcc) + separator + str(self.kappa)
-        return ret
+        Returns:
+            float: F1 score value.
+        """
+        if precision + recall != 0:
+            return 2 * (precision * recall) / (precision + recall)
+        return 0.0
+
+    def _calculate_fpr(self, fp: int, tn: int) -> float:
+        """
+        Calculate False Positive Rate.
+
+        Args:
+            fp (int): Number of false positives.
+            tn (int): Number of true negatives.
+
+        Returns:
+            float: False Positive Rate value.
+        """
+        denominator = fp + tn
+        return fp / denominator if denominator != 0 else 0.0
+
+    def _calculate_tpr(self, tp: int, fn: int) -> float:
+        """
+        Calculate True Positive Rate.
+
+        Args:
+            tp (int): Number of true positives.
+            fn (int): Number of false negatives.
+
+        Returns:
+            float: True Positive Rate value.
+        """
+        denominator = tp + fn
+        return tp / denominator if denominator != 0 else 0.0
+
+    def _calculate_mcc(self, tp: int, tn: int, fp: int, fn: int) -> float:
+        """
+        Calculate Matthews Correlation Coefficient.
+
+        Args:
+            tp (int): Number of true positives.
+            tn (int): Number of true negatives.
+            fp (int): Number of false positives.
+            fn (int): Number of false negatives.
+
+        Returns:
+            float: Matthews Correlation Coefficient value.
+        """
+        denominator = math.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+        if denominator != 0:
+            return ((tp * tn) - (fp * fn)) / denominator
+        return 0.0
+
+    def _calculate_kappa(self, tp: int, tn: int, fp: int, fn: int) -> float:
+        """
+        Calculate Cohen's Kappa coefficient.
+
+        Implementation based on:
+        https://stackoverflow.com/questions/58735642/how-to-correctly-implement-cohen-kappa-metric-in-keras
+
+        Args:
+            tp (int): Number of true positives.
+            tn (int): Number of true negatives.
+            fp (int): Number of false positives.
+            fn (int): Number of false negatives.
+
+        Returns:
+            float: Kappa coefficient value.
+        """
+        total = tn + fp + fn + tp
+        if total == 0:
+            return 0.0
+            
+        p0 = (tn + tp) / total
+        pa = ((tn + tp) / total) * ((tn + fn) / total)
+        pb = ((fn + tp) / total) * ((fp + tp) / total)
+        pe = pa + pb
+        
+        return (p0 - pe) / (1 - pe) if pe != 1 else 0.0
+
+    def __str__(self) -> str:
+        """
+        Convert results to formatted string.
+
+        Returns:
+            str: Formatted string with all metrics.
+        """
+        metrics = [
+            ("Accuracy", self.accuracy),
+            ("Precision", self.precision),
+            ("Recall", self.recall),
+            ("F1 score", self.f1_score),
+            ("FPR", self.fpr),
+            ("TPR", self.tpr),
+            ("AUC", self.auc),
+            ("MCC", self.mcc),
+            ("Kappa", self.kappa)
+        ]
+        
+        return "\n".join(f" * {name:<10} -> {value}" for name, value in metrics)
+
+    def get_csv_header(self, separator: str) -> str:
+        """
+        Get CSV header string.
+
+        Args:
+            separator (str): CSV field separator.
+
+        Returns:
+            str: CSV header string.
+        """
+        fields = [
+            "accuracy", "precision", "recall", "f1", "fpr", "tpr",
+            "auc", "fp", "fn", "tp", "tn", "mcc", "kappa"
+        ]
+        return separator.join(fields)
+
+    def to_csv(self, separator: str) -> str:
+        """
+        Convert results to CSV format.
+
+        Args:
+            separator (str): CSV field separator.
+
+        Returns:
+            str: CSV formatted string with all metrics.
+        """
+        values = [
+            self.accuracy, self.precision, self.recall,
+            self.f1_score, self.fpr, self.tpr, self.auc,
+            self.fp, self.fn, self.tp, self.tn,
+            self.mcc, self.kappa
+        ]
+        return separator.join(str(value) for value in values)

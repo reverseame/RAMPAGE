@@ -1,195 +1,155 @@
 import warnings
-
-from RAMPAGE.DataElement import DataElement
 import random
+from RAMPAGE.DataElement import DataElement
 
-################################################################################
-#  CONSTANT STRINGS  ###########################################################
-################################################################################
 
-WRONG_PERCENTAGES_MESSAGE = '''ERROR:
+# Error and warning message templates
+WRONG_PERCENTAGES_MESSAGE = """ERROR:
 
 Wrong percentages of train, validation and test...
 
 train + validation + test =
-{trainWPM} + {validationWPM} + {testWPM} =
-{resultWPM}
-'''
+{train_pct} + {validation_pct} + {test_pct} =
+{total_pct}
+"""
 
-WARNING_PERCENTAGES_MESSAGE = '''WARNING:
+WARNING_PERCENTAGES_MESSAGE = """WARNING:
 
 Train percentage should be greater than validation percentage...
 
 train <= validation
-{trainWPM} <= {validationWPM}
-'''
+{train_pct} <= {validation_pct}
+"""
 
-################################################################################
-#  CODE  #######################################################################
-################################################################################
 
 class DatasetManager:
-
-    # Sets of trains, validation and test
-    trainS = set()
-    validationS = set()
-    testS = set()
-
-    # Percentage (split) of train, validation and test over 100
-    trainP = 60
-    validationP = 20
-    testP = 20
+    """
+    A class to manage dataset splitting and loading for machine learning tasks.
+    
+    This class handles the division of data into training, validation, and test sets,
+    with configurable percentages and optional randomization.
+    """
 
     def __init__(self):
-        self.trainS.clear()
-        self.validationS.clear()
-        self.testS.clear()
-        self.trainP = 80
-        self.validationP = 10
-        self.testP = 10
+        """Initialize DatasetManager with default settings."""
+        self.train_set = set()
+        self.validation_set = set()
+        self.test_set = set()
+        self.train_pct = 80
+        self.validation_pct = 10
+        self.test_pct = 10
 
-    def setPercentages(self, train:int, validation:int, test:int):
+    def set_percentages(self, train: int, validation: int, test: int) -> None:
         """
-        Set percentages of train, validation and test
+        Set split percentages for train, validation and test sets.
         
-        train + validation + test = 100
-        
-        :param train: Percentage of DataElements to be train
-        :param validation: Percentage of DataElements to be validation
-        :param test: Percentage of DataElements to be test
+        Args:
+            train (int): Percentage of data for training.
+            validation (int): Percentage of data for validation.
+            test (int): Percentage of data for testing.
+            
+        Raises:
+            Exception: If percentages don't sum to 100.
         """
-        # Check if parameters have correct percentages (SUM = 100)
         if train + validation + test != 100:
-            # Case that SUM != 100: raise an error
             raise Exception(WRONG_PERCENTAGES_MESSAGE.format(
-                trainWPM = train,
-                validationWPM = validation,
-                testWPM = test,
-                resultWPM = train + validation + test
+                train_pct=train,
+                validation_pct=validation,
+                test_pct=test,
+                total_pct=train + validation + test
             ))
-        # Check if train percentage is greater than validation percentage
-        if (train <= validation):
+
+        if train <= validation:
             warnings.warn(WARNING_PERCENTAGES_MESSAGE.format(
-                trainWPM = train,
-                validationWPM = validation
+                train_pct=train,
+                validation_pct=validation
             ))
         
-        # Set new percentages
-        self.trainP = train
-        self.validationP = validation
-        self.testP = test
+        self.train_pct = train
+        self.validation_pct = validation
+        self.test_pct = test
 
-    def getTrain(self) -> set:
-        """
-        Get training set
+    def get_train(self) -> set:
+        """Return the training set."""
+        return self.train_set
 
-        :return: {DataElement}
-        """
-        return self.trainS
+    def get_validation(self) -> set:
+        """Return the validation set."""
+        return self.validation_set
 
-    def getValidation(self) -> set:
-        """
-        Get validation set
-
-        :return: {DataElement}
-        """
-        return self.validationS
-
-    def getTest(self) -> set:
-        """
-        Get testing set
-
-        :return: {DataElement}
-        """
-        return self.testS
+    def get_test(self) -> set:
+        """Return the test set."""
+        return self.test_set
     
-    def add(self, path:str, randomSets:bool):
+    def add(self, path: str, random_sets: bool) -> None:
         """
-        Add DataElements splitted in train, validation and test sets
-        from the specified file
-
-        :param path: Path from DataElements are being read
-        :param randomSets: Determinates if sets will be randomized
-        """
-        # Read in dataGeneral all instances of DataElements
-        dataGeneral = []
-        with open(path, 'r') as f:
-            for line in f:
-                dataGeneral.append(self.parseDataElement(line))
-
-        # In case that sets must be with randomization items
-        if randomSets:
-            random.shuffle(dataGeneral)
-
-        # Init values
-        i = 0
-        maxNumElements = len(dataGeneral)
-
-        # Get training set
-        maxIndexTrain = maxNumElements * self.trainP / 100
-        while i < maxIndexTrain:
-            self.trainS.add(dataGeneral[i])
-            i = i+1
+        Load and split data from file into train, validation and test sets.
         
-        # Get validation set
-        maxIndexVal = maxNumElements * (self.trainP + self.validationP) / 100
-        while i < maxIndexVal:
-            self.validationS.add(dataGeneral[i])
-            i = i+1
+        Args:
+            path (str): Path to the data file.
+            random_sets (bool): Whether to randomize the data split.
+        """
+        data_elements = []
+        with open(path, 'r') as f:
+            data_elements = [self.parse_data_element(line) for line in f]
+
+        if random_sets:
+            random.shuffle(data_elements)
+
+        total_elements = len(data_elements)
+        train_end = int(total_elements * self.train_pct / 100)
+        val_end = int(total_elements * (self.train_pct + self.validation_pct) / 100)
+
+        self.train_set.update(data_elements[:train_end])
+        self.validation_set.update(data_elements[train_end:val_end])
+        self.test_set.update(data_elements[val_end:])
+
+    def add_train(self, path: str) -> None:
+        """
+        Add data from file to training set.
         
-        # Get testing set
-        while i < maxNumElements:
-            self.testS.add(dataGeneral[i])
-            i = i+1
-
-    def addTrain(self, path:str):
-        """
-        Adds DataElements to train set
-        from the specified file
-
-        :param path: Path from DataElements are being read
+        Args:
+            path (str): Path to the data file.
         """
         with open(path, 'r') as f:
-            for line in f:
-                self.trainS.add(self.parseDataElement(line))
+            self.train_set.update(self.parse_data_element(line) for line in f)
 
-    def addValidation(self, path:str):
+    def add_validation(self, path: str) -> None:
         """
-        Adds DataElements to validation set
-        from the specified file
-
-        :param path: Path from DataElements are being read
-        """
-        with open(path, 'r') as f:
-            for line in f:
-                self.validationS.add(self.parseDataElement(line))
-
-    def addTest(self, path:str):
-        """
-        Adds DataElements to test set
-        from the specified file
-
-        :param path: Path from DataElements are being read
+        Add data from file to validation set.
+        
+        Args:
+            path (str): Path to the data file.
         """
         with open(path, 'r') as f:
-            for line in f:
-                self.testS.add(self.parseDataElement(line))
+            self.validation_set.update(self.parse_data_element(line) for line in f)
 
-    def clear(self):
+    def add_test(self, path: str) -> None:
         """
-        Clears all elements from train, validation and test sets
+        Add data from file to test set.
+        
+        Args:
+            path (str): Path to the data file.
         """
-        self.trainS.clear()
-        self.validationS.clear()
-        self.testS.clear()
+        with open(path, 'r') as f:
+            self.test_set.update(self.parse_data_element(line) for line in f)
 
-    def parseDataElement(self, line:str) -> DataElement:
-        '''readDataElement function'''
-        domain = line.split(";")[0]
-        isDGAstr = line.split(";")[1]
+    def clear(self) -> None:
+        """Clear all data sets."""
+        self.train_set.clear()
+        self.validation_set.clear()
+        self.test_set.clear()
 
-        isDGA = False
-        if (eval(isDGAstr)):
-            isDGA = True
-
-        return DataElement(domain, isDGA)
+    def parse_data_element(self, line: str) -> DataElement:
+        """
+        Parse a line of text into a DataElement.
+        
+        Args:
+            line (str): Line of text to parse.
+            
+        Returns:
+            DataElement: Parsed data element.
+        """
+        domain, is_dga_str = line.strip().split(";")
+        is_dga = bool(eval(is_dga_str))
+        return DataElement(domain, is_dga)

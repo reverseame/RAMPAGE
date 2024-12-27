@@ -1,51 +1,115 @@
 from RAMPAGE.Framework import Framework
 from RAMPAGE.DatasetManager import DatasetManager
 
-from classifiers.LSTM import LSTM_example
-from classifiers.CNN import CNN_example
-from classifiers.baseline import Baseline_example
+from classifiers.LSTM import LSTMExample
+from classifiers.CNN import CNNExample
+from classifiers.baseline import BaselineExample
 
-# Define your dataset path
-PATH_DGA = "TBD"
-PATH_NON_DGA = "TBD"
 
-# Create Framework
-framework = Framework()
+def main():
+    """
+    Main function to run the DGA detection framework with multiple classifiers.
+    """
+    # Define dataset paths
+    # TODO: Replace with actual paths
+    PATH_DGA = "***"
+    PATH_NON_DGA = "***"
 
-# Create DatasetManager implementation
-datasetManager = DatasetManager()
+    # Initialize and configure framework
+    framework = setup_framework()
+    
+    # Load and process datasets
+    load_datasets(framework, PATH_DGA, PATH_NON_DGA)
+    
+    # Train and evaluate classifiers
+    run_classifiers(framework)
+    
+    # Print results
+    print_results(framework)
 
-# Set percentajes to use in train, validation and test
-datasetManager.setPercentages(70,15,15)
 
-# Set in framework the dataset to use
-framework.defineDatasetManager(datasetManager)
+def setup_framework() -> Framework:
+    """
+    Initialize and configure the framework and dataset manager.
+    
+    Returns:
+        Framework: Configured framework instance.
+    """
+    # Create framework instance
+    framework = Framework()
+    
+    # Configure dataset manager
+    dataset_manager = DatasetManager()
+    dataset_manager.set_percentages(
+        train=70,
+        validation=15,
+        test=15
+    )
+    
+    # Set dataset manager in framework
+    framework.set_dataset_manager(dataset_manager)
+    
+    return framework
 
-# Add dga dataset
-framework.addDataset(PATH_DGA, True)
 
-# Add Non dga dataset
-framework.addDataset(PATH_NON_DGA, True)
+def load_datasets(framework: Framework, dga_path: str, non_dga_path: str) -> None:
+    """
+    Load DGA and non-DGA datasets into the framework.
+    
+    Args:
+        framework: The framework instance.
+        dga_path: Path to DGA dataset.
+        non_dga_path: Path to non-DGA dataset.
+    """
+    # Add datasets with randomization enabled
+    framework.add_dataset(dga_path, random_sets=True)
+    framework.add_dataset(non_dga_path, random_sets=True)
 
-# Define classifiers
-classifiers = [
-    LSTM_example,
-    CNN_example,
-    Baseline_example
-]
 
-for classifier in classifiers:
-    classifierObj = classifier()
-    framework.addClassifier(classifierObj)
+def run_classifiers(framework: Framework) -> None:
+    """
+    Initialize, train and test all classifiers.
+    
+    Args:
+        framework: The framework instance.
+    """
+    # Define classifier classes
+    classifier_classes = [
+        LSTMExample,
+        CNNExample,
+        BaselineExample
+    ]
+    
+    # Initialize and add classifiers to framework
+    for classifier_class in classifier_classes:
+        classifier = classifier_class()
+        framework.add_classifier(classifier)
+    
+    # Train and test all classifiers
+    framework.train()
+    framework.test()
 
-# Train all classifiers
-framework.train()
 
-# Test all classifiers
-framework.test()
+def print_results(framework: Framework) -> None:
+    """
+    Print classification results for all classifiers.
+    
+    Args:
+        framework: The framework instance.
+    """
+    results = framework.get_results()
+    
+    print("\n=== Classification Results ===\n")
+    
+    for i in range(len(results)):
+        classifier = framework.get_classifier_by_index(i)
+        result = framework.get_result_by_index(i)
+        
+        print(f"\nClassifier: {classifier.__class__.__name__}")
+        print("-" * 40)
+        print(result)
+        print()
 
-results = framework.getResults()
 
-for i in range(len(results)):
-    print(framework.getClassifierByIndex(i).__class__.__name__)
-    print(framework.getResultByIndex(i).toString())
+if __name__ == "__main__":
+    main()
