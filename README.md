@@ -48,7 +48,7 @@ The `main.py` file contains the primary execution code. It should import RAMPAGE
 
 ```python
 from RAMPAGE.Framework import Framework
-from PersonaldatasetManager import PersonalDatasetManager
+from RAMPAGE.DatasetManager import DatasetManager
 ```
 
 Next, `DatasetManager` is then defined within RAMPAGE `Framework`, and the datasets to be used are added.
@@ -57,7 +57,7 @@ Next, `DatasetManager` is then defined within RAMPAGE `Framework`, and the datas
 # Create Framework
 framework = Framework()
 # Create DatasetManager1 implementation
-datasetManager = PersonalDatasetManager()
+datasetManager = DatasetManager()
 # Set percentajes to use in train, validation and test
 datasetManager.setPercentages(70,15,15)
 # Set in framework the dataset to use
@@ -73,9 +73,9 @@ The next step is to define the classifiers, train, and test them.
 ```python
 # Define classifiers
 classifiers = [
-    LSTM_example,
-    CNN_example,
-    Baseline_example
+    LSTMExample,
+    CNNExample,
+    BaselineExample
 ]
 for classifier in classifiers:
     classifierObj = classifier()
@@ -101,7 +101,9 @@ for i in range(len(results)):
 
 For managing datasets, two classes need to be considered: `DataElement` and `DatasetManager`. `DataElement` represents a single unit with all its features. In the base version, it only includes the domain and a boolean indicating whether the domain should be classified as malicious or not. If new fields or features need to be added, two new classes must be created, inheriting from `DataElement` and `DatasetManager`, respectively.
 
-In `DataElement`, you need to add as many attributes to the class as the number of features you want to include. In `DatasetManager`, the `parseDataElement` function must be overridden so that it can read the new fields of the updated `DataElement`.
+In `DataElement`, you need to add as many attributes to the class as the number of features you want to include. In `DatasetManager`, the `parse_data_element` function must be overridden so that it can read the new fields of the updated `DataElement`.
+
+Base `DatasetManager` follows `<domain>;<"True"/"False">` syntax (without `<` and `>` characters).
 
 #### Result
 
@@ -115,21 +117,6 @@ class ResultPersonal(Result):
         self.accuracy = accuracy
         self.precision = precision
         self.recall = recall
-
-    def toString(self) -> str:
-        ret = " * Accuracy   -> " + str(self.accuracy) + "\n"
-        ret = ret + " * Precision  -> " + str(self.precision) + "\n"
-        ret = ret + " * Recall     -> " + str(self.recall)
-        return ret
-    
-    def toCSVheader(self, separator:str) -> str:
-        ret = "accuracy" + separator + "precision" + separator + "recall"
-        return ret
-
-    def toCSV(self, separator:str) -> str:
-        ret = str(self.accuracy) + separator + str(self.precision)
-        ret = ret + separator + str(self.recall)
-        return ret
 ```
 
 #### Classifier
