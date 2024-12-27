@@ -107,13 +107,15 @@ Base `DatasetManager` follows `<domain>;<"True"/"False">` syntax (without `<` an
 
 #### Result
 
-`Result` class is special, as it is empty by default. Therefore, a new class that inherits from `Result` should be created, where the desired metrics for the statistics to be measured will be implemented. E.g.:
+`Result` is empty by default. Therefore, a new class that inherits from `Result` should be created, where the desired metrics for the statistics to be measured will be implemented. E.g.:
 
 
 ```python
 class ResultPersonal(Result):
 
     def __init__(self, accuracy, precision, recall):
+        super().__init__()
+
         self.accuracy = accuracy
         self.precision = precision
         self.recall = recall
