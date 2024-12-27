@@ -1,7 +1,5 @@
 from RAMPAGE.Result import Result
 import math
-from typing import Union
-
 
 class ResultCommon(Result):
     """
@@ -25,40 +23,35 @@ class ResultCommon(Result):
     ) -> None:
         """
         Initialize ResultCommon with classification metrics.
-
-        Args:
-            accuracy (float): Classification accuracy.
-            precision (float): Classification precision.
-            recall (float): Classification recall.
-            fp (int): Number of false positives.
-            fn (int): Number of false negatives.
-            tp (int): Number of true positives.
-            tn (int): Number of true negatives.
-            auc (float): Area Under the Curve value.
         """
-        self.accuracy = accuracy
-        self.precision = precision
-        self.recall = recall
+        super().__init__()
         
-        # Calculate F1 score
-        self.f1_score = self._calculate_f1_score(precision, recall)
+        # Calculate all metrics
+        f1_score = self._calculate_f1_score(precision, recall)
+        fpr = self._calculate_fpr(fp, tn)
+        tpr = self._calculate_tpr(tp, fn)
+        mcc = self._calculate_mcc(tp, tn, fp, fn)
+        kappa = self._calculate_kappa(tp, tn, fp, fn)
         
-        # Calculate False Positive Rate and True Positive Rate
-        self.fpr = self._calculate_fpr(fp, tn)
-        self.tpr = self._calculate_tpr(tp, fn)
+        # Add all metrics using the base class method
+        metrics = [
+            ("Accuracy", accuracy),
+            ("Precision", precision),
+            ("Recall", recall),
+            ("F1 score", f1_score),
+            ("FPR", fpr),
+            ("TPR", tpr),
+            ("AUC", auc),
+            ("FP", fp),
+            ("FN", fn),
+            ("TP", tp),
+            ("TN", tn),
+            ("MCC", mcc),
+            ("Kappa", kappa)
+        ]
         
-        # Store basic metrics
-        self.fp = fp
-        self.fn = fn
-        self.tp = tp
-        self.tn = tn
-        self.auc = auc
-        
-        # Calculate Matthews Correlation Coefficient
-        self.mcc = self._calculate_mcc(tp, tn, fp, fn)
-        
-        # Calculate Kappa coefficient
-        self.kappa = self._calculate_kappa(tp, tn, fp, fn)
+        for name, value in metrics:
+            self.add_metric(name, value)
 
     def _calculate_f1_score(self, precision: float, recall: float) -> float:
         """
@@ -147,58 +140,3 @@ class ResultCommon(Result):
         pe = pa + pb
         
         return (p0 - pe) / (1 - pe) if pe != 1 else 0.0
-
-    def __str__(self) -> str:
-        """
-        Convert results to formatted string.
-
-        Returns:
-            str: Formatted string with all metrics.
-        """
-        metrics = [
-            ("Accuracy", self.accuracy),
-            ("Precision", self.precision),
-            ("Recall", self.recall),
-            ("F1 score", self.f1_score),
-            ("FPR", self.fpr),
-            ("TPR", self.tpr),
-            ("AUC", self.auc),
-            ("MCC", self.mcc),
-            ("Kappa", self.kappa)
-        ]
-        
-        return "\n".join(f" * {name:<10} -> {value}" for name, value in metrics)
-
-    def get_csv_header(self, separator: str) -> str:
-        """
-        Get CSV header string.
-
-        Args:
-            separator (str): CSV field separator.
-
-        Returns:
-            str: CSV header string.
-        """
-        fields = [
-            "accuracy", "precision", "recall", "f1", "fpr", "tpr",
-            "auc", "fp", "fn", "tp", "tn", "mcc", "kappa"
-        ]
-        return separator.join(fields)
-
-    def to_csv(self, separator: str) -> str:
-        """
-        Convert results to CSV format.
-
-        Args:
-            separator (str): CSV field separator.
-
-        Returns:
-            str: CSV formatted string with all metrics.
-        """
-        values = [
-            self.accuracy, self.precision, self.recall,
-            self.f1_score, self.fpr, self.tpr, self.auc,
-            self.fp, self.fn, self.tp, self.tn,
-            self.mcc, self.kappa
-        ]
-        return separator.join(str(value) for value in values)
