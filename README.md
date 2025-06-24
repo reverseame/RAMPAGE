@@ -163,6 +163,7 @@ issn = {0957-4174},
 doi = {https://doi.org/10.1016/j.eswa.2025.128629},
 url = {https://www.sciencedirect.com/science/article/pii/S0957417425022481},
 author = {Tomás Pelayo-Benedet and Ricardo J. Rodríguez and Carlos H. Gañán}
+}
 ```
 
 ## Funding support
