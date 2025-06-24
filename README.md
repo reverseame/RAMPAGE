@@ -153,7 +153,16 @@ Licensed under the [GNU GPLv3](LICENSE) license.
 
 If you are using this software, please cite it as follows:
 ```
-TBD
+@article{pelayobenedetrampage,
+title = {RAMPAGE: a software framework to ensure reproducibility in algorithmically generated domains detection},
+journal = {Expert Systems with Applications},
+volume = {293},
+pages = {128629},
+year = {2025},
+issn = {0957-4174},
+doi = {https://doi.org/10.1016/j.eswa.2025.128629},
+url = {https://www.sciencedirect.com/science/article/pii/S0957417425022481},
+author = {Tomás Pelayo-Benedet and Ricardo J. Rodríguez and Carlos H. Gañán}
 ```
 
 ## Funding support
